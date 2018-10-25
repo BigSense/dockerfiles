@@ -27,6 +27,12 @@ RUN apk update -qq \
 COPY entrypoint.sh              /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
 
+
+COPY favicon.png /opt/atlassian/confluence/confluence/images/icons/favicon.png
+COPY favicon.ico /opt/atlassian/confluence/confluence/images/icons/favicon.ico
+COPY favicon.ico /opt/atlassian/confluence/confluence/favicon.ico
+
+
 ARG CONFLUENCE_VERSION=6.12.1
 ARG DOWNLOAD_URL=http://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-${CONFLUENCE_VERSION}.tar.gz
 
