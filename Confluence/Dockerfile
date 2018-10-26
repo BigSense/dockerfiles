@@ -27,14 +27,6 @@ RUN apk update -qq \
 COPY entrypoint.sh              /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
 
-# I'm not sure this actually does anything; must be set in the admin UI too
-COPY favicon.png $CONFLUENCE_INSTALL_DIR/confluence/images/icons/favicon.png
-COPY favicon.ico $CONFLUENCE_INSTALL_DIR/confluence/images/icons/favicon.ico
-COPY favicon.ico $CONFLUENCE_INSTALL_DIR/confluence/favicon.ico
-
-COPY server.xml $CONFLUENCE_INSTALL_DIR/conf/server.xml
-COPY urlrewrite.xml $CONFLUENCE_INSTALL_DIR/confluence/WEB-INF/urlrewrite.xml
-
 ARG CONFLUENCE_VERSION=6.12.1
 ARG DOWNLOAD_URL=http://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-${CONFLUENCE_VERSION}.tar.gz
 
@@ -46,3 +38,10 @@ RUN mkdir -p                             ${CONFLUENCE_INSTALL_DIR} \
     && sed -i -e 's/-Xms\([0-9]\+[kmg]\) -Xmx\([0-9]\+[kmg]\)/-Xms\${JVM_MINIMUM_MEMORY:=\1} -Xmx\${JVM_MAXIMUM_MEMORY:=\2} \${JVM_SUPPORT_RECOMMENDED_ARGS} -Dconfluence.home=\${CONFLUENCE_HOME}/g' ${CONFLUENCE_INSTALL_DIR}/bin/setenv.sh \
     && sed -i -e 's/port="8090"/port="8090" secure="${catalinaConnectorSecure}" scheme="${catalinaConnectorScheme}" proxyName="${catalinaConnectorProxyName}" proxyPort="${catalinaConnectorProxyPort}"/' ${CONFLUENCE_INSTALL_DIR}/conf/server.xml  \
     && sed -i -e 's/Context path=""/Context path="${catalinaContextPath}"/' ${CONFLUENCE_INSTALL_DIR}/conf/server.xml
+
+COPY favicon.png ${CONFLUENCE_INSTALL_DIR}/confluence/images/icons/favicon.png
+COPY favicon.ico ${CONFLUENCE_INSTALL_DIR}/confluence/images/icons/favicon.ico
+COPY favicon.ico ${CONFLUENCE_INSTALL_DIR}/confluence/favicon.ico
+
+COPY server.xml ${CONFLUENCE_INSTALL_DIR}/conf/server.xml
+COPY urlrewrite.xml ${CONFLUENCE_INSTALL_DIR}/confluence/WEB-INF/urlrewrite.xml
