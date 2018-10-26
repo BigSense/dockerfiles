@@ -44,4 +44,3 @@ COPY favicon.ico ${CONFLUENCE_INSTALL_DIR}/confluence/images/icons/favicon.ico
 COPY favicon.ico ${CONFLUENCE_INSTALL_DIR}/confluence/favicon.ico
 
 COPY server.xml ${CONFLUENCE_INSTALL_DIR}/conf/server.xml
-COPY urlrewrite.xml ${CONFLUENCE_INSTALL_DIR}/confluence/WEB-INF/urlrewrite.xml
