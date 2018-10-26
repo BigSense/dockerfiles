@@ -27,11 +27,13 @@ RUN apk update -qq \
 COPY entrypoint.sh              /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
 
+# I'm not sure this actually does anything; must be set in the admin UI too
+COPY favicon.png $CONFLUENCE_INSTALL_DIR/confluence/images/icons/favicon.png
+COPY favicon.ico $CONFLUENCE_INSTALL_DIR/confluence/images/icons/favicon.ico
+COPY favicon.ico $CONFLUENCE_INSTALL_DIR/confluence/favicon.ico
 
-COPY favicon.png /opt/atlassian/confluence/confluence/images/icons/favicon.png
-COPY favicon.ico /opt/atlassian/confluence/confluence/images/icons/favicon.ico
-COPY favicon.ico /opt/atlassian/confluence/confluence/favicon.ico
-
+COPY server.xml $CONFLUENCE_INSTALL_DIR/conf/server.xml
+COPY urlrewrite.xml $CONFLUENCE_INSTALL_DIR/confluence/WEB-INF/urlrewrite.xml
 
 ARG CONFLUENCE_VERSION=6.12.1
 ARG DOWNLOAD_URL=http://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-${CONFLUENCE_VERSION}.tar.gz
