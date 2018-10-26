@@ -18,9 +18,9 @@
 
     <rule>
       <name>WWW/Canonical Hostname Redirect</name>
-      <condition name="host" operator="notequal">^bigsense\.io</condition>
-      <condition name="host" operator="notequal">^$</condition>
-      <from>^/(.*)</from>
-      <to type="redirect" last="true">https://bigsense.io/$1</to>
+      <condition type="request-url" operator="equal">(^http://www.bigsense.io|^https://www.bigsense.io)</condition>
+      <from>^(.*)$</from>
+      <to type="redirect">https://bigsense.io$1</to>
     </rule>
+
 </urlrewrite>
