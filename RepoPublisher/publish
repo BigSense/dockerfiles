@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+
+from subprocess import Popen, PIPE, STDOUT
+import os
+import re
+from glob import glob
+import shutil
+import sys
+
+homedir = os.path.expanduser('~')
+bin_dir = os.environ['BIN_DIR']
+repo_dir = os.environ['REPO_DIR']
+
+debs = os.path.join(repo_dir, 'debs')
+rpms = os.path.join(repo_dir, 'rpms')
+yums = os.path.join(repo_dir, 'yum')
+init_systems = ['upstart', 'systemv', 'systemd']
+components = ['nightly', 'testing', 'stable' ]
+config = os.path.join(bin_dir, 'aptly.conf')
+KEY_NAME = 'BigSenseIO'
+
+packages = { 'rpm' :
+              { 'component_split' : '-', 'version_split' : '_' },
+             'deb' :
+              { 'component_split' : '_', 'version_split' : '-' }
+           }
+
+def repo_name(config_file):
+    return os.path.basename(config_file).split('.')[0]
+
+def run_cmd(cmd):
+    cmd = ' '.join(str(i) for i in cmd)
+    print(cmd)
+    sys.stdout.flush()
+    p = Popen(cmd, env=os.environ, shell=True)
+    p.wait()
+
+def stage_from_version(file):
+    """
+    versions that contain a dash or underscore (e.g. -1-2afe32) are nightly
+    versions that do not end with a number (e.g alpha, beta) are testing
+    all other version (e.g. 0.2.5) are stable. The ~upstart/~systemd are
+    trimmed and ignored.
+    """
+    package_type = 'rpm' if file.endswith('.rpm') else 'deb'
+    split_char = '-' if file.endswith('.rpm') else '_'
+    version = file.split(packages[package_type]['component_split'])[1].split('~')[0]
+    ends_with_number = re.search(r'\d+$', version)
+
+    if packages[package_type]['version_split'] in version:
+        return 'nightly'
+    elif ends_with_number is None:
+        return 'testing'
+    else:
+        return 'stable'
+
+if __name__ == '__main__':
+
+    passphrase_file = os.path.join(repo_dir,'bigsense.passphrase')
+
+    if not os.path.exists(os.path.join(homedir, '.gnupg', 'trustdb.gpg')):
+        print('PGP key not found. Importing bigsense.sec')
+        run_cmd(('gpg1', '--batch', '--passphrase-file', passphrase_file, '--import', os.path.join(repo_dir, 'bigsense.sec')))
+        with open(os.path.join(homedir, '.gnupg', 'gpg.conf'), 'w') as gconf:
+            gconf.write('default-key {}\n'.format(KEY_NAME))
+    if not os.path.exists(os.path.join(repo_dir, 'bigsense.io.key')):
+        print('Repo key not found. Exporting bigsense.io.key')
+        run_cmd(('gpg1', '--export', '-o', os.path.join(repo_dir, 'www', 'bigsense.io.key'),'-a', KEY_NAME ))
+    if not os.path.exists(os.path.join(homedir, '.rpmmacros')):
+        print('RPM Macros not found. Creating.')
+        with open(os.path.join(homedir, '.rpmmacros'), 'w') as m:
+            m.write('%_signature gpg')
+            m.write('%_gpg_name {}'.format(KEY_NAME))
+
+    for init_type in init_systems:
+        for deb in glob( os.path.join(debs, init_type, '*.deb') ):
+            component = stage_from_version(deb)
+            run_cmd(('aptly','-config={}'.format(config),'repo','add','{}-{}'.format(init_type,component),deb))
+            os.unlink(deb)
+
+    for init_type in init_systems:
+        run_cmd(('aptly', '-batch', '-passphrase-file={}'.format(passphrase_file), '-config={}'.format(config), 'publish', 'update', init_type))
+
+    # RPMs
+
+    for rpm in glob( os.path.join(rpms, '*.rpm')):
+        component = stage_from_version(rpm)
+        dest_dir = os.path.join(yums, component)
+
+        if os.path.exists(os.path.join(dest_dir, os.path.basename(rpm))):
+            os.unlink(rpm)
+        else:
+            # Sign RPM
+            run_cmd((os.path.join(bin_dir, 'rpmsign'),rpm))
+            shutil.move(rpm, dest_dir)
+
+    for stage in components:
+        run_cmd(('createrepo', '--update', os.path.join(yums, stage)))
+        run_cmd(('gpg1', '--batch', '--yes', '--detach-sign', '--armor', '--passphrase-file', passphrase_file, os.path.join(yums, stage, 'repodata', 'repomd.xml')))
