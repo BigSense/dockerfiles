@@ -63,7 +63,7 @@ if __name__ == '__main__':
         run_cmd(('gpg1', '--batch', '--passphrase-file', passphrase_file, '--import', os.path.join(repo_dir, 'bigsense.sec')))
         with open(os.path.join(homedir, '.gnupg', 'gpg.conf'), 'w') as gconf:
             gconf.write('default-key {}\n'.format(KEY_NAME))
-    if not os.path.exists(os.path.join(repo_dir, 'bigsense.io.key')):
+    if not os.path.exists(os.path.join(repo_dir, 'www', 'bigsense.io.key')):
         print('Repo key not found. Exporting bigsense.io.key')
         run_cmd(('gpg1', '--export', '-o', os.path.join(repo_dir, 'www', 'bigsense.io.key'),'-a', KEY_NAME ))
     if not os.path.exists(os.path.join(homedir, '.rpmmacros')):
