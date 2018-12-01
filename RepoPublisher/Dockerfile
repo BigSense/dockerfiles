@@ -13,7 +13,6 @@ ENV BIN_DIR /repoman-bin
 ENV REPO_DIR /repoman
 
 RUN mkdir -p $BIN_DIR
-COPY rpmsign $BIN_DIR
 COPY publish $BIN_DIR
 COPY aptly.conf $BIN_DIR
 
