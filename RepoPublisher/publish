@@ -56,11 +56,9 @@ def stage_from_version(file):
 
 if __name__ == '__main__':
 
-    passphrase_file = os.path.join(repo_dir,'bigsense.passphrase')
-
     if not os.path.exists(os.path.join(homedir, '.gnupg', 'trustdb.gpg')):
         print('PGP key not found. Importing bigsense.sec')
-        run_cmd(('gpg1', '--batch', '--passphrase-file', passphrase_file, '--import', os.path.join(repo_dir, 'bigsense.sec')))
+        run_cmd(('gpg1', '--import', os.path.join(repo_dir, 'bigsense.sec')))
         with open(os.path.join(homedir, '.gnupg', 'gpg.conf'), 'w') as gconf:
             gconf.write('default-key {}\n'.format(KEY_NAME))
     if not os.path.exists(os.path.join(repo_dir, 'www', 'bigsense.io.key')):
@@ -69,8 +67,9 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join(homedir, '.rpmmacros')):
         print('RPM Macros not found. Creating.')
         with open(os.path.join(homedir, '.rpmmacros'), 'w') as m:
-            m.write('%_signature gpg')
-            m.write('%_gpg_name {}'.format(KEY_NAME))
+            m.write('%_signature gpg\n')
+            m.write('%_gpg_name {}\n'.format(KEY_NAME))
+            m.write('%__gpg /usr/bin/gpg1\n')
 
     for init_type in init_systems:
         for deb in glob( os.path.join(debs, init_type, '*.deb') ):
@@ -79,7 +78,7 @@ if __name__ == '__main__':
             os.unlink(deb)
 
     for init_type in init_systems:
-        run_cmd(('aptly', '-batch', '-passphrase-file={}'.format(passphrase_file), '-config={}'.format(config), 'publish', 'update', init_type))
+        run_cmd(('aptly', '-config={}'.format(config), 'publish', 'update', init_type))
 
     # RPMs
 
@@ -91,9 +90,9 @@ if __name__ == '__main__':
             os.unlink(rpm)
         else:
             # Sign RPM
-            run_cmd((os.path.join(bin_dir, 'rpmsign'),rpm))
+            run_cmd(('rpm', '--resign', rpm))
             shutil.move(rpm, dest_dir)
 
     for stage in components:
         run_cmd(('createrepo', '--update', os.path.join(yums, stage)))
-        run_cmd(('gpg1', '--batch', '--yes', '--detach-sign', '--armor', '--passphrase-file', passphrase_file, os.path.join(yums, stage, 'repodata', 'repomd.xml')))
+        run_cmd(('gpg1', '--yes', '--detach-sign', '--armor', os.path.join(yums, stage, 'repodata', 'repomd.xml')))

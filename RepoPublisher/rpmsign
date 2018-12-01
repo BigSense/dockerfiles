@@ -1,8 +1,0 @@
-#!/usr/bin/expect -f
-
-set fp [open "$REPO_DIR/bigsense.passphrase"]
-set data [read $fp]
-spawn rpm --resign {*}$argv
-expect -exact "Enter pass phrase: "
-send -- "$data\r"
-expect eof
